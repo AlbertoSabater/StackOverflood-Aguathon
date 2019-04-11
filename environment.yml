@@ -120,5 +120,3 @@ dependencies:
   - wrapt=1.11.1=py36he774522_0
   - zeromq=4.3.1=h33f27b4_3
   - zlib=1.2.11=h62dcd97_3
-prefix: C:\Users\Alberto\Anaconda3\envs\aguathon_053
-

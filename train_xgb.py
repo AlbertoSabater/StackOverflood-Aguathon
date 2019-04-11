@@ -19,29 +19,41 @@ import json
 import pickle
 
 
-validation_split = 0.2
-label = '72h'
+# TODO: aplicar k-fold sobre feature grid search -> 3-4 modelos con features diferentes
+
+validation_split = 0.15
+label = '48h'
+#num_columns = 120   # [499]   validation_0-rmse:0.048481      validation_1-rmse:0.067338
+#num_columns = 150   # [499]   validation_0-rmse:0.044235      validation_1-rmse:0.060947
+#num_columns = 168   # [499]   validation_0-rmse:0.043145      validation_1-rmse:0.060269
+#num_columns = 170   # [499]   validation_0-rmse:0.042698      validation_1-rmse:0.056718
+num_columns = 158   # [499]   validation_0-rmse:0.041888      validation_1-rmse:0.056495
+
+
+
+
 #X_train, X_val = pd.read_pickle('datasets/X_train_0.2_298.pckl'), pd.read_pickle('datasets/X_val_0.2_298.pckl')
 #y_train, y_val = pd.read_pickle('datasets/Y_train_0.2_pred_24h_298.pckl'), pd.read_pickle('datasets/Y_val_0.2_pred_24h_298.pckl')
+dataset_filename = 'datasets/XY_{}_pred_{}_{}.pckl'.format(validation_split, label, num_columns)
 X_train, X_val, y_train, y_val = pickle.load(
-		open('datasets/XY_{}_pred_{}_298.pckl'.format(validation_split, label), 'rb'))
+		open(dataset_filename, 'rb'))
 
 
 columns_step = 10
 
-riesgo = X_train['RIESGO']
-del X_train['RIESGO']; del X_val['RIESGO']
+#riesgo = X_train['RIESGO']
+#del X_train['RIESGO']; del X_val['RIESGO']
 columns = X_train.columns.tolist()
 
 
 # %%
 
-columns = X_train.columns.tolist()
-random.shuffle(columns)
+#columns = X_train.columns.tolist()
+#random.shuffle(columns)
 count = 0
 num_steps = int(len(columns))
 
-errors = []
+errors = [] 
 best_error = np.inf
 best_model = None
 best_columns = None
@@ -53,19 +65,20 @@ while len(columns) > 0:
 	
 	t = time.time()
 	
-	sample_weight = compute_class_weight(class_weight='balanced', classes=[True, False], y=riesgo)
-	sample_weight = [ sample_weight[0] if r else sample_weight[1] for r in riesgo ]
+#	sample_weight = compute_class_weight(class_weight='balanced', classes=[True, False], y=riesgo)
+#	sample_weight = [ sample_weight[0] if r else sample_weight[1] for r in riesgo ]
 
-	model = XGBRegressor(max_depth=7, n_estimators=400, learning_rate=0.05, n_jobs=6)
+	model = XGBRegressor(max_depth=7, n_estimators=600, learning_rate=0.05, n_jobs=8)
 	model.fit(X_train, y_train,
 			  eval_set = [(X_train, y_train), (X_val, y_val)],
 			  verbose = False,
 			  early_stopping_rounds = 10,
-			  sample_weight = sample_weight)
+#			  sample_weight = sample_weight
+              )
 	
 	
 	fi = model.feature_importances_
-	fi_inds = sorted(range(len(fi)), key=lambda k: fi[k], reverse=True)
+#	fi_inds = sorted(range(len(fi)), key=lambda k: fi[k], reverse=True)
 	
 	results = model.evals_result()
 	train_error = min(results['validation_0']['rmse'])
@@ -91,7 +104,8 @@ while len(columns) > 0:
 			))
 	
 	if len(columns) <= columns_step: break
-	columns = np.random.choice(columns, size=len(columns)-columns_step, replace=False, p=fi)
+	columns = np.random.choice(X_train.columns.tolist(), 
+                            size=len(columns)-columns_step, replace=False, p=fi)
 #	columns = [ columns[i] for i in fi_inds[:-columns_step] ]
 	X_train = X_train[columns]
 	X_val = X_val[columns]
@@ -109,7 +123,9 @@ folder_path = base_model_dir + '{}_{}_model_{}/'.format(
 os.makedirs(folder_path)
 
 pickle.dump(best_model, open(folder_path + 'xgb.pckl', 'wb'))
-json.dump({'val_error': best_error, 'columns': best_columns.tolist()},
+json.dump({'val_error': best_error, 
+           'columns': best_columns, 
+           'dataset_filename': dataset_filename},
 		  open(folder_path + 'stats.json', 'w'))
 
 
@@ -160,3 +176,15 @@ if False:
 	plt.plot(results['validation_1']['rmse'], label='Test')
 
 
+    # %%
+    
+    from xgboost import plot_importance
+    
+    fig, ax = plt.subplots(1,1,figsize=(12,35))
+    plot_importance(model, ax = ax, height=0.5);
+    
+    
+    
+# %%
+    
+plt.bar(range(len(columns)), fi)
