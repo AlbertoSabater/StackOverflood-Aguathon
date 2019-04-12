@@ -11,13 +11,20 @@ import pickle
 import datetime
 from tqdm import tqdm
 import os
+from scipy import signal
 import sys
 
+
+
+
+np.random.seed(123)
+
+gaussian, sigma = False, 9
 
 dataset_filename = './ftp/ENTRADA/datos.csv'
 validation_split = 0.15
 return_labels = True
-    
+	
 df = pd.read_csv(dataset_filename, index_col=0)
 df.index = pd.to_datetime(df.index)
 
@@ -28,7 +35,7 @@ data = df.loc[:, data_columns]
 if return_labels: labels = df.loc[:, label_columns]
 else: labels = None
 del df
-    
+	
 
 # %%
 
@@ -44,73 +51,97 @@ del df
 
 # TODO: ponderar más fuertemente al día/hora central
 
+def get_mean(values, gaussian, sigma):
+	if len(values) == 0:
+		return np.nan
+	elif gaussian:
+		# Apply gaussian filter to values
+		window = signal.gaussian(len(values), sigma)
+		for i in range(len(values)):
+			if np.isnan(values[i]): values[i], window[i] = 0, 0
+		window /= sum(window)
+		return sum(np.array(values) * window)		
+				
+	else:
+		values = [ v for v in values if not np.isnan(v) ]
+		return np.mean(values)
+
+
 side_days = 4
 side_hours = 3
-means_filename = './datasets/means_sd{}_sh{}.pckl'.format(side_days, side_hours)
+gaussian_suffix = 'w{}'.format(sigma) if gaussian else 'nw'
+means_filename = './datasets/means_sd{}_sh{}_{}.pckl'.format(side_days, side_hours, 
+									 gaussian_suffix)
 
 if os.path.isfile(means_filename):
-    print('Loading: ',means_filename)
-    means = pickle.load(open(means_filename, 'rb'))
+	print('Loading: ',means_filename)
+	means = pickle.load(open(means_filename, 'rb'))
 
 else:
-    
-    print('Calculating:', means_filename)
+	
+	print('Calculating:', means_filename)
 
-    hours = sorted(list(set(data.index.hour)))
-    days = sorted(list(set(data.index.day)))
-    months = sorted(list(set(data.index.month)))
-    years = sorted(list(set(data.index.year)))
-    
-    
-    means = {}
-    
-    for col in tqdm(data_columns, total=len(data_columns), file=sys.stdout):
-        means[col] = {}
-    
-        for d in days:
-            means[col]['day_{}'.format(d)] = {}
-            
-            for m in months:
-                
-                # Check if date is valid
-                try : dt = datetime.datetime(2000, m, d)
-                except ValueError : continue
-                means[col]['day_{}'.format(d)]['month_{}'.format(m)] = {}
-                
-                for h in hours:
-                
-                    values = []
-                    for y in years:
-    #                    # Check if date is valid
-                        try : dt = datetime.datetime(y, m, d, hour=h)
-                        except ValueError: continue
-    #                    dt = datetime.datetime(y, m, d, hour=h)
-                        
-                        sd_values = []
-                        # Get side day delays
-                        for sd in list(range(-side_days, side_days+1)):
-                            dt_sd = dt + datetime.timedelta(days=sd)
-                            
-                            sh_values = []
-                            # Get side hour delays
-                            for sh in list(range(-side_hours, side_hours+1)):
-                                dt_sh = dt_sd + datetime.timedelta(hours=sh)
-                                
-                                if dt_sh in data.index: sh_values.append(data.loc[dt_sh, col])
-                                
-                            sh_values = [ v for v in sh_values if not np.isnan(v) ]
-                            sd_values.append(np.mean(sh_values))
-                        
-                        sd_values = [ v for v in sd_values if not np.isnan(v) ]
-                        values.append(np.mean(sd_values))
-                    
-                    values = [ v for v in values if not np.isnan(v) ]
-                    means[col]['day_{}'.format(d)]['month_{}'.format(m)]['hour_{}'.format(h)] = np.mean(values)
-        #            break
-        #        break
-        #    break
-    
-    pickle.dump(means, open(means_filename, 'wb'))
+	hours = sorted(list(set(data.index.hour)))
+	days = sorted(list(set(data.index.day)))
+	months = sorted(list(set(data.index.month)))
+	years = sorted(list(set(data.index.year)))
+	
+	
+	means = {}
+	
+	for col in tqdm(data_columns, total=len(data_columns), file=sys.stdout):
+		means[col] = {}
+	
+		for d in days:
+			means[col]['day_{}'.format(d)] = {}
+			
+			for m in months:
+				
+				# Check if date is valid
+				try : dt = datetime.datetime(2000, m, d)
+				except ValueError : continue
+				means[col]['day_{}'.format(d)]['month_{}'.format(m)] = {}
+				
+				for h in hours:
+				
+					sy_values = []
+					for y in years:
+	#					# Check if date is valid
+						try : dt = datetime.datetime(y, m, d, hour=h)
+						except ValueError: continue
+	#					dt = datetime.datetime(y, m, d, hour=h)
+						
+						sd_values = []
+						# Get side day delays
+						for sd in list(range(-side_days, side_days+1)):
+							dt_sd = dt + datetime.timedelta(days=sd)
+							
+							sh_values = []
+							# Get side hour delays
+							for sh in list(range(-side_hours, side_hours+1)):
+								dt_sh = dt_sd + datetime.timedelta(hours=sh)
+								
+								if dt_sh in data.index: 
+									sh_values.append(data.loc[dt_sh, col])
+								
+#							sh_values = [ v for v in sh_values if not np.isnan(v) ]
+#							sd_values.append(np.mean(sh_values))
+							# Add hourly mean  
+							sd_values.append(get_mean(sh_values, gaussian, sigma))
+						
+#						sd_values = [ v for v in sd_values if not np.isnan(v) ]
+#						values.append(np.mean(sd_values))
+						# Add daily mean
+						sy_values.append(get_mean(sd_values, gaussian, sigma))
+					
+#					values = [ v for v in values if not np.isnan(v) ]
+#					means[col]['day_{}'.format(d)]['month_{}'.format(m)]['hour_{}'.format(h)] = np.mean(values)
+					means[col]['day_{}'.format(d)]['month_{}'.format(m)]['hour_{}'.format(h)] = get_mean(sy_values, False, sigma)
+		#			break
+		#		break
+		#	break
+	
+	pickle.dump(means, open(means_filename, 'wb'))
 
 
 # %%
@@ -119,39 +150,39 @@ else:
 
 # 1,2,3,5,7 días
 # 8,12 horas
-    
+	
 print('Adding daily feaures')
 iter_days = list(range(-7, 7+1)) + [10,15,20,25,30, 35,40,45, 50,55]
 for d in tqdm(iter_days, total=len(iter_days), file=sys.stdout):
-    inds = data.index + pd.DateOffset(days=d)
-    for col in data_columns:
-        col_vals = []
-        for old_ind, new_ind in zip(data.index, inds):
-            col_vals.append(
-                    data.loc[old_ind, col] - 
-                    means[col]['day_{}'.format(new_ind.day)]\
-                                ['month_{}'.format(new_ind.month)]\
-                                ['hour_{}'.format(new_ind.hour)])
+	inds = data.index + pd.DateOffset(days=d)
+	for col in data_columns:
+		col_vals = []
+		for old_ind, new_ind in zip(data.index, inds):
+			col_vals.append(
+					data.loc[old_ind, col] - 
+					means[col]['day_{}'.format(new_ind.day)]\
+								['month_{}'.format(new_ind.month)]\
+								['hour_{}'.format(new_ind.hour)])
 
-        data = data.assign(**{'{}-d{}'.format(col, d): col_vals})
-    
+		data = data.assign(**{'{}-d{}'.format(col, d): col_vals})
+	
 
 # %%
  
 #print('Adding hourly features')
 #iter_hours = [4,8,12,16]
 #for h in tqdm(iter_hours, total=len(iter_hours), file=sys.stdout):
-#    inds = data.index + pd.DateOffset(hours=h)
-#    for col in data_columns:
-#        col_vals = []
-#        for old_ind, new_ind in zip(data.index, inds):
-#            col_vals.append(
-#                    data.loc[old_ind, col] - 
-#                    means[col]['day_{}'.format(new_ind.day)]\
-#                                ['month_{}'.format(new_ind.month)]\
-#                                ['hour_{}'.format(new_ind.hour)])
+#	inds = data.index + pd.DateOffset(hours=h)
+#	for col in data_columns:
+#		col_vals = []
+#		for old_ind, new_ind in zip(data.index, inds):
+#			col_vals.append(
+#					data.loc[old_ind, col] - 
+#					means[col]['day_{}'.format(new_ind.day)]\
+#								['month_{}'.format(new_ind.month)]\
+#								['hour_{}'.format(new_ind.hour)])
 #
-#        data = data.assign(**{'{}-h{}'.format(col, h): col_vals})
+#		data = data.assign(**{'{}-h{}'.format(col, h): col_vals})
 
 
 # %%
@@ -177,10 +208,10 @@ inds_val = inds[num_train:]
 X_train = data.loc[inds_train]
 X_val = data.loc[inds_val]
 for c in labels.columns:
-    dataset_filename = 'datasets/XY_{}_{}_{}.pckl'.format(validation_split, c, len(data.columns))
-    pickle.dump([X_train, X_val, labels.loc[inds_train, c], labels.loc[inds_val, c]],
+	dataset_filename = 'datasets/XY_{}_{}_{}_{}.pckl'.format(validation_split, c, len(data.columns), gaussian_suffix)
+	pickle.dump([X_train, X_val, labels.loc[inds_train, c], labels.loc[inds_val, c]],
 			open(dataset_filename, 'wb')
 		)
-    print(dataset_filename, 'stored')
+	print(dataset_filename, 'stored')
 
 
