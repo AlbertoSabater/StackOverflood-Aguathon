@@ -19,7 +19,7 @@ import sys
 
 np.random.seed(123)
 
-gaussian, sigma = False, 9
+gaussian, sigma = True, 0.75
 
 dataset_filename = './ftp/ENTRADA/datos.csv'
 validation_split = 0.15
@@ -124,22 +124,15 @@ else:
 								if dt_sh in data.index: 
 									sh_values.append(data.loc[dt_sh, col])
 								
-#							sh_values = [ v for v in sh_values if not np.isnan(v) ]
-#							sd_values.append(np.mean(sh_values))
 							# Add hourly mean  
 							sd_values.append(get_mean(sh_values, gaussian, sigma))
 						
-#						sd_values = [ v for v in sd_values if not np.isnan(v) ]
-#						values.append(np.mean(sd_values))
 						# Add daily mean
 						sy_values.append(get_mean(sd_values, gaussian, sigma))
 					
-#					values = [ v for v in values if not np.isnan(v) ]
-#					means[col]['day_{}'.format(d)]['month_{}'.format(m)]['hour_{}'.format(h)] = np.mean(values)
-					means[col]['day_{}'.format(d)]['month_{}'.format(m)]['hour_{}'.format(h)] = get_mean(sy_values, False, sigma)
-		#			break
-		#		break
-		#	break
+					# Add yearly mean
+					means[col]['day_{}'.format(d)]['month_{}'.format(m)]['hour_{}'.format(h)] = \
+												get_mean(sy_values, False, sigma)
 	
 	pickle.dump(means, open(means_filename, 'wb'))
 

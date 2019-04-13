@@ -22,7 +22,7 @@ import pickle
 from sklearn.metrics import mean_squared_error
 
 
-n_jobs = 4
+n_jobs = 8
 
 
 def fit_predict_xgb(X_train, X_val, y_train, y_val):
@@ -172,25 +172,27 @@ def train_model(dataset_filename, label, feat_mode, columns_step, early_stopping
 	
 	# %%
 	
-	#plt.figure(figsize=(12,7))
-	fig, ax1 = plt.subplots(figsize=(12,7))
-	ax2 = ax1.twinx()
-	
-	ax1.plot([ d['num_columns'] for d in errors[:-1] ],
-			 [ d['error_train'] for d in errors[:-1] ], 
-			 c='m', label='Train')
-	ax1.plot([ d['num_columns'] for d in errors[:-1] ],
-			 [ d['error_val'] for d in errors[:-1] ], 
-			 c='g', label='Validation')
-	
-	ax2.plot([ d['num_columns'] for d in errors ],
-			 [ d['training_time'] for d in errors ], label='Training time')
-	
-	ax1.set_ylabel('RMSE', color='g')
-	ax2.set_ylabel('Minutes', color='g')
-	
-	ax1.legend()
-	ax2.legend()
+	if False:
+		#%%
+		#plt.figure(figsize=(12,7))
+		fig, ax1 = plt.subplots(figsize=(12,7))
+		ax2 = ax1.twinx()
+		
+		ax1.plot([ d['num_columns'] for d in errors[:-1] ],
+				 [ d['error_train'] for d in errors[:-1] ], 
+				 c='m', label='Train')
+		ax1.plot([ d['num_columns'] for d in errors[:-1] ],
+				 [ d['error_val'] for d in errors[:-1] ], 
+				 c='g', label='Validation')
+		
+		ax2.plot([ d['num_columns'] for d in errors ],
+				 [ d['training_time'] for d in errors ], label='Training time')
+		
+		ax1.set_ylabel('RMSE', color='g')
+		ax2.set_ylabel('Minutes', color='g')
+		
+		ax1.legend()
+		ax2.legend()
 
 
 
@@ -212,25 +214,27 @@ num_columns = 158   # [499]   validation_0-rmse:0.041888	  validation_1-rmse:0.0
 columns_step = 5
 early_stopping = 14
 num_models_per_label = 5
-gaussian_suffix = 'nw' 			# w3, nw
+#gaussian_suffix = 'nw' 			# w3, nw
 #feat_mode = 'random' 				# best, random
 
 
-for label in ['24h', '48h', '72h']:
-	dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}.pckl'.format(
-			validation_split, label, num_columns, gaussian_suffix)
-	print('='*80)
-	print('|| {} | {}'.format('best', dataset_filename))
-	print('='*80)
-	train_model(dataset_filename, label, 'best', columns_step, early_stopping)
-		
-	for i in range(num_models_per_label):
+for gaussian_suffix in ['w0.25', 'w0.5', 'w1.5', 'w9']:
+#for gaussian_suffix in ['w1', 'w5', 'w7', 'w9']:
+	for label in ['24h', '48h', '72h']:
 		dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}.pckl'.format(
 				validation_split, label, num_columns, gaussian_suffix)
 		print('='*80)
-		print('|| {}/{} | {}'.format(i+1, num_models_per_label, dataset_filename))
+		print('|| {} | {}'.format('best', dataset_filename))
 		print('='*80)
-		train_model(dataset_filename, label, 'random', columns_step, early_stopping)
+		train_model(dataset_filename, label, 'best', columns_step, early_stopping)
+			
+		for i in range(num_models_per_label+1):
+			dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}.pckl'.format(
+					validation_split, label, num_columns, gaussian_suffix)
+			print('='*80)
+			print('|| {}/{} | {}'.format(i+1, num_models_per_label, dataset_filename))
+			print('='*80)
+			train_model(dataset_filename, label, 'random', columns_step, early_stopping)
 	
 	
 
