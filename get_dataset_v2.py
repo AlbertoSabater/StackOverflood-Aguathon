@@ -19,7 +19,14 @@ import sys
 
 np.random.seed(123)
 
-gaussian, sigma = True, 0.75
+gaussian, sigma = True, 0.5
+side_days = 4
+side_hours = 1
+
+gaussian_suffix = 'w{}'.format(sigma) if gaussian else 'nw'
+means_filename = './datasets/means_sd{}_sh{}_{}.pckl'.format(side_days, side_hours, 
+									 gaussian_suffix)
+
 
 dataset_filename = './ftp/ENTRADA/datos.csv'
 validation_split = 0.15
@@ -66,12 +73,6 @@ def get_mean(values, gaussian, sigma):
 		values = [ v for v in values if not np.isnan(v) ]
 		return np.mean(values)
 
-
-side_days = 4
-side_hours = 3
-gaussian_suffix = 'w{}'.format(sigma) if gaussian else 'nw'
-means_filename = './datasets/means_sd{}_sh{}_{}.pckl'.format(side_days, side_hours, 
-									 gaussian_suffix)
 
 if os.path.isfile(means_filename):
 	print('Loading: ',means_filename)
@@ -201,10 +202,18 @@ inds_val = inds[num_train:]
 X_train = data.loc[inds_train]
 X_val = data.loc[inds_val]
 for c in labels.columns:
-	dataset_filename = 'datasets/XY_{}_{}_{}_{}.pckl'.format(validation_split, c, len(data.columns), gaussian_suffix)
+	dataset_filename = 'datasets/XY_{}_{}_{}_{}_sd{}_sh{}.pckl'.format(validation_split, 
+								 c, len(data.columns), gaussian_suffix, side_days, side_hours)
 	pickle.dump([X_train, X_val, labels.loc[inds_train, c], labels.loc[inds_val, c]],
 			open(dataset_filename, 'wb')
 		)
 	print(dataset_filename, 'stored')
+
+
+# %%
+
+# TODO: actualizar dataset a todos los json stats
+	
+
 
 

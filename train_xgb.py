@@ -212,25 +212,29 @@ num_columns = 158   # [499]   validation_0-rmse:0.041888	  validation_1-rmse:0.0
 #X_train, X_val = pd.read_pickle('datasets/X_train_0.2_298.pckl'), pd.read_pickle('datasets/X_val_0.2_298.pckl')
 #y_train, y_val = pd.read_pickle('datasets/Y_train_0.2_pred_24h_298.pckl'), pd.read_pickle('datasets/Y_val_0.2_pred_24h_298.pckl')
 columns_step = 5
-early_stopping = 14
+early_stopping = 9
 num_models_per_label = 5
+side_days = 4
+side_hours = 1
 #gaussian_suffix = 'nw' 			# w3, nw
 #feat_mode = 'random' 				# best, random
 
 
-for gaussian_suffix in ['w0.25', 'w0.5', 'w1.5', 'w9']:
+for gaussian_suffix in ['w0.5']:
+#for gaussian_suffix in ['w0.25', 'w0.5', 'w1.5', 'w9']:
 #for gaussian_suffix in ['w1', 'w5', 'w7', 'w9']:
 	for label in ['24h', '48h', '72h']:
-		dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}.pckl'.format(
-				validation_split, label, num_columns, gaussian_suffix)
+		dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}_sd{}_sh{}.pckl'.format(
+				validation_split, label, num_columns, gaussian_suffix,
+				side_days, side_hours)
 		print('='*80)
 		print('|| {} | {}'.format('best', dataset_filename))
 		print('='*80)
 		train_model(dataset_filename, label, 'best', columns_step, early_stopping)
 			
 		for i in range(num_models_per_label+1):
-			dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}.pckl'.format(
-					validation_split, label, num_columns, gaussian_suffix)
+#			dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}.pckl'.format(
+#					validation_split, label, num_columns, gaussian_suffix)
 			print('='*80)
 			print('|| {}/{} | {}'.format(i+1, num_models_per_label, dataset_filename))
 			print('='*80)
