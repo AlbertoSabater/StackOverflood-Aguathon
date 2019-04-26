@@ -212,30 +212,67 @@ num_columns = 158   # [499]   validation_0-rmse:0.041888	  validation_1-rmse:0.0
 #X_train, X_val = pd.read_pickle('datasets/X_train_0.2_298.pckl'), pd.read_pickle('datasets/X_val_0.2_298.pckl')
 #y_train, y_val = pd.read_pickle('datasets/Y_train_0.2_pred_24h_298.pckl'), pd.read_pickle('datasets/Y_val_0.2_pred_24h_298.pckl')
 columns_step = 5
-early_stopping = 14
-num_models_per_label = 5
+early_stopping = 10
+num_models_per_label = 10
 #gaussian_suffix = 'nw' 			# w3, nw
 #feat_mode = 'random' 				# best, random
 
 
-for gaussian_suffix in ['w0.25', 'w0.5', 'w1.5', 'w9']:
-#for gaussian_suffix in ['w1', 'w5', 'w7', 'w9']:
-	for label in ['24h', '48h', '72h']:
-		dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}.pckl'.format(
-				validation_split, label, num_columns, gaussian_suffix)
-		print('='*80)
-		print('|| {} | {}'.format('best', dataset_filename))
-		print('='*80)
-		train_model(dataset_filename, label, 'best', columns_step, early_stopping)
-			
-		for i in range(num_models_per_label+1):
+#gaussian_suffixes = [ 
+#						'w0.5_sd6_sh3', 'w0.5_sd2_sh3', 
+#						'w0.5_sd4_sh1', 'w0.5_sd4_sh5'
+#						'w0.25_sd6_sh3', 'w0.25_sd2_sh3', 
+#						'w0.25_sd4_sh1', 'w0.25_sd4_sh5',
+#						'w0.75_sd6_sh3', 'w0.75_sd2_sh3', 
+#						'w0.75_sd4_sh1', 'w0.75_sd4_sh5',
+#					]
+
+#gaussian_suffixes = [
+#						'w0.75_sd6_sh1', 'w0.75_sd2_sh1', 
+#						'w0.75_sd6_sh5', 'w0.75_sd2_sh5',
+#						'w0.5_sd6_sh1', 'w0.5_sd2_sh1', 
+#						'w0.5_sd6_sh5', 'w0.5_sd2_sh5',
+#						'w0.25_sd6_sh1', 'w0.25_sd2_sh1', 
+#						'w0.25_sd6_sh5', 'w0.25_sd2_sh5',
+#					]
+
+gaussian_suffixes = [ 'w{}_{}'.format(w, gs) for w in [0.5, 0.75, 0.25] 
+						for gs in ['d6_h7', 'd6_h9', 'd8_h5', 'd8_h7', 'd8_h9']]
+
+#dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}.pckl'.format(
+#		validation_split, label, num_columns, gaussian_suffix)
+##		print('='*80)
+##		print('|| {} | {}'.format('best', dataset_filename))
+##		print('='*80)
+##		train_model(dataset_filename, label, 'best', columns_step, early_stopping)
+		
+
+for i in range(num_models_per_label):
+	iter_t = time.time()
+	for label in ['72h', '24h', '48h']:
+		label_t = time.time()
+		for gaussian_suffix in gaussian_suffixes:
+	#	for gaussian_suffix in ['w0.75']:
+		#for gaussian_suffix in ['w0.25', 'w0.5', 'w1.5', 'w9']:
+		#for gaussian_suffix in ['w1', 'w5', 'w7', 'w9']:
+
+			t = time.time()
 			dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}.pckl'.format(
 					validation_split, label, num_columns, gaussian_suffix)
 			print('='*80)
 			print('|| {}/{} | {}'.format(i+1, num_models_per_label, dataset_filename))
 			print('='*80)
 			train_model(dataset_filename, label, 'random', columns_step, early_stopping)
-	
+			print(' ** Time elapsed: {:.2f}'.format((time.time()-t)/60))
+		
+		print('*'*33)
+		print('****** Label time: {:.2f} ****** '.format((time.time()-label_t)/60))
+		print('*'*33)
+	print('*'*41)
+	print('*'*41)
+	print('*********** Iter time: {:.2f} ************ '.format((time.time()-iter_t)/60))
+	print('*'*41)
+	print('*'*41)
 	
 
 # %%

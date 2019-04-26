@@ -19,12 +19,17 @@ import sys
 
 np.random.seed(123)
 
-gaussian, sigma = True, 0.75
+gaussian, sigma = True, 0.25
 
 dataset_filename = './ftp/ENTRADA/datos.csv'
 validation_split = 0.15
 return_labels = True
-	
+
+# Default sd4_sh3
+side_days = 8
+side_hours = 9
+
+
 df = pd.read_csv(dataset_filename, index_col=0)
 df.index = pd.to_datetime(df.index)
 
@@ -67,8 +72,6 @@ def get_mean(values, gaussian, sigma):
 		return np.mean(values)
 
 
-side_days = 4
-side_hours = 3
 gaussian_suffix = 'w{}'.format(sigma) if gaussian else 'nw'
 means_filename = './datasets/means_sd{}_sh{}_{}.pckl'.format(side_days, side_hours, 
 									 gaussian_suffix)
@@ -201,7 +204,8 @@ inds_val = inds[num_train:]
 X_train = data.loc[inds_train]
 X_val = data.loc[inds_val]
 for c in labels.columns:
-	dataset_filename = 'datasets/XY_{}_{}_{}_{}.pckl'.format(validation_split, c, len(data.columns), gaussian_suffix)
+	dataset_filename = 'datasets/XY_{}_{}_{}_{}_sd{}_sh{}.pckl'.format(
+			validation_split, c, len(data.columns), gaussian_suffix, side_days, side_hours)
 	pickle.dump([X_train, X_val, labels.loc[inds_train, c], labels.loc[inds_val, c]],
 			open(dataset_filename, 'wb')
 		)
