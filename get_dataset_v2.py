@@ -20,7 +20,6 @@ import sys
 np.random.seed(123)
 
 gaussian, sigma = True, 0.25
-
 dataset_filename = './ftp/ENTRADA/datos.csv'
 validation_split = 0.15
 return_labels = True
@@ -204,11 +203,23 @@ inds_val = inds[num_train:]
 X_train = data.loc[inds_train]
 X_val = data.loc[inds_val]
 for c in labels.columns:
+<<<<<<< HEAD
 	dataset_filename = 'datasets/XY_{}_{}_{}_{}_sd{}_sh{}.pckl'.format(
 			validation_split, c, len(data.columns), gaussian_suffix, side_days, side_hours)
+=======
+	dataset_filename = 'datasets/XY_{}_{}_{}_{}_sd{}_sh{}.pckl'.format(validation_split, 
+								 c, len(data.columns), gaussian_suffix, side_days, side_hours)
+>>>>>>> 418b0445eafda435a11d748a7101d541f6788723
 	pickle.dump([X_train, X_val, labels.loc[inds_train, c], labels.loc[inds_val, c]],
 			open(dataset_filename, 'wb')
 		)
 	print(dataset_filename, 'stored')
+
+
+# %%
+
+# TODO: actualizar dataset a todos los json stats
+	
+
 
 

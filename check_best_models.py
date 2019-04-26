@@ -12,7 +12,6 @@ import numpy as np
 
 
 # TODO: Explorar feature importances de los mejores modelos
-# TODO: plot boxplot por tipo
 
 
 models_dir = './models/'
@@ -24,7 +23,7 @@ def get_models():
 
 # %%
 
-label = '24h'
+label = '72h'
 models = get_models()
 
 best_score = np.inf
@@ -38,6 +37,7 @@ for model, stats in models.items():
 			best_model = model
 			best_stats = stats
 
+print(best_model, '|', best_stats['dataset_filename'])
 
 # %%
 			
