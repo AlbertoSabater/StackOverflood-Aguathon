@@ -211,33 +211,30 @@ num_columns = 158   # [499]   validation_0-rmse:0.041888	  validation_1-rmse:0.0
 
 #X_train, X_val = pd.read_pickle('datasets/X_train_0.2_298.pckl'), pd.read_pickle('datasets/X_val_0.2_298.pckl')
 #y_train, y_val = pd.read_pickle('datasets/Y_train_0.2_pred_24h_298.pckl'), pd.read_pickle('datasets/Y_val_0.2_pred_24h_298.pckl')
-columns_step = 5
-early_stopping = 10
+columns_step = 2
+early_stopping = 15
 num_models_per_label = 10
 #gaussian_suffix = 'nw' 			# w3, nw
 #feat_mode = 'random' 				# best, random
 
 
-#gaussian_suffixes = [ 
-#						'w0.5_sd6_sh3', 'w0.5_sd2_sh3', 
-#						'w0.5_sd4_sh1', 'w0.5_sd4_sh5'
-#						'w0.25_sd6_sh3', 'w0.25_sd2_sh3', 
-#						'w0.25_sd4_sh1', 'w0.25_sd4_sh5',
-#						'w0.75_sd6_sh3', 'w0.75_sd2_sh3', 
-#						'w0.75_sd4_sh1', 'w0.75_sd4_sh5',
-#					]
 
-#gaussian_suffixes = [
-#						'w0.75_sd6_sh1', 'w0.75_sd2_sh1', 
-#						'w0.75_sd6_sh5', 'w0.75_sd2_sh5',
-#						'w0.5_sd6_sh1', 'w0.5_sd2_sh1', 
-#						'w0.5_sd6_sh5', 'w0.5_sd2_sh5',
-#						'w0.25_sd6_sh1', 'w0.25_sd2_sh1', 
-#						'w0.25_sd6_sh5', 'w0.25_sd2_sh5',
-#					]
+#gaussian_suffixes = [ 'w{}_{}'.format(w, gs) for w in [0.5, 0.75, 0.25] 
+#						for gs in ['sd6_sh3', 'sd2_sh3', 'sd4_sh1', 'sd4_sh5']]
+#gaussian_suffixes = [ 'w{}_{}'.format(w, gs) for w in [0.5, 0.75, 0.25] 
+#						for gs in ['sd6_sh1', 'sd2_sh1', 'sd6_sh5', 'sd2_sh5']]
+#gaussian_suffixes = [ 'w{}_{}'.format(w, gs) for w in [0.5, 0.75, 0.25] 
+#						for gs in ['sd6_sh7', 'sd6_sh9', 'sd8_sh5', 'sd8_sh7', 'sd8_sh9']]
+#gaussian_suffixes = [ 'w0.5_sd6_sh3']
 
-gaussian_suffixes = [ 'w{}_{}'.format(w, gs) for w in [0.5, 0.75, 0.25] 
-						for gs in ['d6_h7', 'd6_h9', 'd8_h5', 'd8_h7', 'd8_h9']]
+#gaussian_suffixes = [ 'w0.5_sd8_sh3', 'w0.5_sd10_sh3']
+#gaussian_suffixes = [ 'w0.5_sd8_sh5']
+#gaussian_suffixes = [ 'w0.5_sd6_sh7', 'w0.5_sd4_sh5']
+#gaussian_suffixes = [ 'w0.5_sd4_sh3', 'w0.5_sd8_sh7']
+#gaussian_suffixes = [ 'w0.5_sd10_sh3']
+gaussian_suffixes = [ 'w{}_{}'.format(w, gs) for w in [0.5, 0.25] 
+						for gs in ['sd4_sh3', 'sd4_sh1', 'sd6_sh5', 'sd6_sh7']]
+
 
 #dataset_filename = 'datasets/XY_{}_pred_{}_{}_{}.pckl'.format(
 #		validation_split, label, num_columns, gaussian_suffix)
@@ -248,8 +245,8 @@ gaussian_suffixes = [ 'w{}_{}'.format(w, gs) for w in [0.5, 0.75, 0.25]
 		
 
 for i in range(num_models_per_label):
-	iter_t = time.time()
-	for label in ['72h', '24h', '48h']:
+	iter_t = time.time()											
+	for label in ['72h','24h', '48h']: 			# '72h','24h', '48h'
 		label_t = time.time()
 		for gaussian_suffix in gaussian_suffixes:
 	#	for gaussian_suffix in ['w0.75']:

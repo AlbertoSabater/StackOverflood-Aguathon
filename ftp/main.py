@@ -11,7 +11,7 @@ import json
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import time
-
+import sys
 
 
 def get_column_data(col, data, means):
@@ -42,48 +42,62 @@ def get_column_data(col, data, means):
 	return col, col_data
 
 
-def main():
-	models = {
-				'H24': {'model_folder': 'models/24h_0413_0359_model_86/'},
-				'H48': {'model_folder': 'models/48h_0413_0508_model_94/'},
-				'H72': {'model_folder': 'models/72h_0413_0604_model_100/'},
-			}
-	preds = {}
-	
-	
-	dataset_filename = './ENTRADA/datos.csv'
-	data = pd.read_csv(dataset_filename, index_col=0)
-	data.index = pd.to_datetime(data.index)
-	data_columns = ['ALAGON_NR', 'GRISEN_NR', 'NOVILLAS_NR', 'TAUSTE_NR',  'TUDELA_NR', 'ZGZ_NR']
-	data = data.loc[:, data_columns]
-	means = pickle.load(open('models/' + 'means_sd4_sh3_w0.5.pckl', 'rb'))
-	
-	
+def get_dataset(dataset_filename, models):
+	print('Building dataset for labels: {}'.format(', '.join(models.keys())))
 	columns = []
 	for label, model in models.items():
 		stats = json.load(open(model['model_folder'] + 'stats.json', 'r'))
 		columns += stats['columns']
 		models[label]['stats'] = stats
-	columns = list(set(columns))
+	columns = list(set(columns))	
 	
-	print('Building prediction dataset')
+	means_filename = stats['dataset_filename'].split('/')[-1][:-5].split('_')
+	means_filename = 'models/' + 'means_{}_{}_{}.pckl'.format(means_filename[-2], 
+								  means_filename[-1], means_filename[-3])
+	means = pickle.load(open(means_filename, 'rb'))
+
+#		dataset_filename = './ENTRADA/datos.csv'
+	data = pd.read_csv(dataset_filename, index_col=0)
+	data.index = pd.to_datetime(data.index)
+	data_columns = ['ALAGON_NR', 'GRISEN_NR', 'NOVILLAS_NR', 'TAUSTE_NR',  'TUDELA_NR', 'ZGZ_NR']
+	data = data.loc[:, data_columns]
+
 	new_columns = Parallel(n_jobs=-1, max_nbytes=None)(delayed(get_column_data)(col, data, means) 
-			for col in tqdm(columns, total=len(columns)))
+			for col in tqdm(columns, total=len(columns), file=sys.stdout))
 	data = pd.DataFrame(dict(new_columns))[columns]
-	
-	
+
+	preds = {}
 	for label, model in models.items():
-		print('Predicting:', label)
+		print('Predicting label', label)
 		t = time.time()
 		model_l = pickle.load(open(model['model_folder'] + 'model.pckl', 'rb'))
 		preds[label] = model_l.predict(data[model['stats']['columns']])
-		print('Time elapsed in prediction: {:.2f} mins.'.format((time.time()-t)/60))
-		
-	
-	res = pd.DataFrame(preds, index=data.index)
-	res.to_csv('./SALIDA/resultados.csv')
-	print('Predictions stored')
+		print(' - Time elapsed in prediction: {:.2f} mins.'.format((time.time()-t)/60))	
 
+	return preds, data.index
+
+	
+def main():
+	
+	preds = {}
+
+	models = {
+				'H24': {'model_folder': 'models/24h_0427_1555_model_657/'},
+				'H48': {'model_folder': 'models/48h_0427_2332_model_693/'},
+		}
+	model_preds, index = get_dataset('./ENTRADA/datos.csv', models)
+	preds.update(model_preds)
+	
+	models = {
+				'H72': {'model_folder': 'models/72h_0428_1530_model_698/'},
+		}
+	model_preds, index = get_dataset('./ENTRADA/datos.csv', models)
+	preds.update(model_preds)
+	
+	res = pd.DataFrame(preds, index=index)
+	res.to_csv('./SALIDA/resultados.csv')
+	print('Predictions stored')	
+	
 
 if __name__ == '__main__':
 	main()	

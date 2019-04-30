@@ -24,10 +24,8 @@ dataset_filename = './ftp/ENTRADA/datos.csv'
 validation_split = 0.15
 return_labels = True
 
-# Default sd4_sh3
 side_days = 10
 side_hours = 3
-
 
 df = pd.read_csv(dataset_filename, index_col=0)
 df.index = pd.to_datetime(df.index)
@@ -42,18 +40,6 @@ del df
 	
 
 # %%
-
-# Medias de cada día con los X días contiguos a esa hora y las horas contiguas
-# Diferencia de las medias de cada puesto con el resto
-
-# Entrenar con las distancias de cada día a sus media(d,m,h)/diferencias de puestos
-# Distancias de cada día a X días anteriores
-# Gestionar calores nan
-
-
-# %%
-
-# TODO: ponderar más fuertemente al día/hora central
 
 def get_mean(values, gaussian, sigma):
 	if len(values) == 0:
@@ -142,9 +128,6 @@ else:
 # %%
 
 # Distancia de un sample respecto a su media -> a X días/horas antes
-
-# 1,2,3,5,7 días
-# 8,12 horas
 	
 print('Adding daily feaures')
 iter_days = list(range(-7, 7+1)) + [10,15,20,25,30, 35,40,45, 50,55]
@@ -163,24 +146,6 @@ for d in tqdm(iter_days, total=len(iter_days), file=sys.stdout):
 	
 
 # %%
- 
-#print('Adding hourly features')
-#iter_hours = [4,8,12,16]
-#for h in tqdm(iter_hours, total=len(iter_hours), file=sys.stdout):
-#	inds = data.index + pd.DateOffset(hours=h)
-#	for col in data_columns:
-#		col_vals = []
-#		for old_ind, new_ind in zip(data.index, inds):
-#			col_vals.append(
-#					data.loc[old_ind, col] - 
-#					means[col]['day_{}'.format(new_ind.day)]\
-#								['month_{}'.format(new_ind.month)]\
-#								['hour_{}'.format(new_ind.hour)])
-#
-#		data = data.assign(**{'{}-h{}'.format(col, h): col_vals})
-
-
-# %%
 
 print('Adding date columns')
 data = data.assign(day = data.index.day)
@@ -188,9 +153,6 @@ data = data.assign(month = data.index.month)
 
 
 # %%
-# %%
-# %%
-
 
 num_val = int(len(data) * validation_split)
 num_train = len(data) - num_val
@@ -209,12 +171,6 @@ for c in labels.columns:
 			open(dataset_filename, 'wb')
 		)
 	print(dataset_filename, 'stored')
-
-
-# %%
-
-# TODO: actualizar dataset a todos los json stats
-	
 
 
 
